@@ -1,58 +1,62 @@
-# Running the Application
+# dotnet-react-starter
 
-## Prerequisites
+A simple **Notes** full-stack sample application for onboarding intern/junior developers.  
+It demonstrates the basic request flow: **React UI → ASP.NET Core API → SQL Server**.
 
-* .NET 10 SDK
-* Node.js LTS
-* SQL Server (one of the following):
+## Tech stack
 
-  * SQL Server Express (recommended for Windows)
-  * LocalDB (Windows only, easiest setup)
-  * OR Docker Desktop (optional alternative)
+| Layer    | Technology |
+|----------|-----------|
+| Frontend | React 19, TypeScript 5.8, Vite 8, Tailwind CSS 4, TanStack React Query, Axios |
+| Backend  | ASP.NET Core 10 Web API, EF Core 10, SQL Server |
 
 ---
 
-## Database Setup Options
-
-### Option 1 (Recommended): SQL Server Express / LocalDB
-
-Update the connection string in:
+## Repository structure
 
 ```
-api/Sample.Api/appsettings.Development.json
+dotnet-react-starter/
+├── api/
+│   └── Sample.Api/          # ASP.NET Core 10 Web API
+├── web/
+│   └── sample-web/          # React + Vite SPA
+├── README.md
+└── .gitignore
 ```
 
-Example (LocalDB):
+---
 
+## Prerequisites
+
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- [Node.js LTS](https://nodejs.org/)
+- SQL Server — one of:
+  - **LocalDB** (Windows, easiest): installed with Visual Studio or the [SQL Server Express installer](https://www.microsoft.com/en-us/sql-server/sql-server-downloads)
+  - **SQL Server Express** (Windows / Linux)
+  - Any existing local SQL Server instance
+
+---
+
+## Backend setup
+
+### 1. Configure the connection string
+
+Open `api/Sample.Api/appsettings.Development.json` and update the connection string if needed:
+
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=(localdb)\\MSSQLLocalDB;Database=SampleAppDb;Trusted_Connection=True;"
+  }
+}
 ```
-Server=(localdb)\MSSQLLocalDB;Database=SampleAppDb;Trusted_Connection=True;
-```
 
-Example (SQL Server Express):
-
+**SQL Server Express example:**
 ```
 Server=localhost;Database=SampleAppDb;Trusted_Connection=True;TrustServerCertificate=True;
 ```
 
----
-
-### Option 2 (Optional): Docker SQL Server
-
-If Docker is installed:
-
-```bash
-docker compose up -d
-```
-
-Connection string:
-
-```
-Server=localhost,1433;Database=SampleAppDb;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True;
-```
-
----
-
-## Running the API
+### 2. Run the API
 
 ```bash
 cd api/Sample.Api
@@ -60,22 +64,30 @@ dotnet restore
 dotnet run
 ```
 
-API will run on:
+The API starts on:
+- `https://localhost:5001`
+- `http://localhost:5000`
 
-```
-https://localhost:5001
-http://localhost:5000
-```
+Swagger UI is available at:
+- `http://localhost:5000/swagger`
 
-Swagger available at:
-
-```
-/swagger
-```
+> The database is created automatically on first run and seeded with 5 sample notes.
 
 ---
 
-## Running the Frontend
+## Frontend setup
+
+### 1. Configure the API base URL
+
+The file `web/sample-web/.env` already points to the default backend URL:
+
+```
+VITE_API_BASE_URL=http://localhost:5000
+```
+
+Change this if your API runs on a different port.
+
+### 2. Run the frontend
 
 ```bash
 cd web/sample-web
@@ -83,16 +95,41 @@ npm install
 npm run dev
 ```
 
-Frontend will run on:
+The frontend is available at:
+- `http://localhost:5173`
 
-```
-http://localhost:5173
-```
+> Make sure the API is running before opening the frontend.
 
 ---
 
-## Notes
+## Features
 
-* Ensure the API is running before starting the frontend.
-* The frontend expects the API base URL configured in an environment file (`.env`).
-* Database will be created automatically on first run (EF Core migrations or EnsureCreated).
+- View all notes (newest first)
+- Create a note
+- Edit a note inline
+- Delete a note
+
+---
+
+## Architecture notes
+
+### Backend
+
+```
+NotesController  →  INotesService / NotesService  →  AppDbContext  →  SQL Server
+```
+
+- **Controllers** are thin — they only handle HTTP concerns.
+- **Services** contain all business logic.
+- **DTOs** (`CreateNoteRequest`, `UpdateNoteRequest`, `NoteResponse`) are used in place of EF entities.
+- EF Core Code-First with `EnsureCreated()` on startup.
+
+### Frontend
+
+```
+pages/Home  →  hooks/useNotes  →  services/notesApi (Axios)  →  API
+```
+
+- All API calls go through `services/notesApi.ts`.
+- TanStack React Query handles data fetching, caching and mutation.
+- Queries are invalidated after every mutation — no manual state updates.
