@@ -8,8 +8,16 @@ var builder = WebApplication.CreateBuilder(args);
 // --- Services ---
 builder.Services.AddControllers();
 
+// Choose DB provider based on appsettings: "InMemory" (default) or "SqlServer"
+var dbProvider = builder.Configuration["DatabaseProvider"] ?? "InMemory";
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    if (dbProvider.Equals("SqlServer", StringComparison.OrdinalIgnoreCase))
+        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    else
+        options.UseInMemoryDatabase("SampleAppDb");
+});
 
 builder.Services.AddScoped<INotesService, NotesService>();
 
